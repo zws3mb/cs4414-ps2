@@ -20,7 +20,7 @@ x=x+1;
             match program {
                 ~"exit"     => {return; }
 		~"history"  => {
-			int::range(0,x){|i|
+			range(0,x){|i|
 			println(hist[i]);
 }
 		

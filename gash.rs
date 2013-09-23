@@ -7,8 +7,9 @@ fn main() {
     let mut hist = ~std::vec::from_elem(size,~"test");	
 
     loop {
-        print(CMD_PROMPT);
-        let line = io::stdin().read_line();
+//        print(CMD_PROMPT);
+print( "gash:"+std::os::getcwd().to_str()+"$ ");    
+      let line = io::stdin().read_line();
         debug!(fmt!("line: %?", line));
 	
 	// Fringe case; history buffer is at capacity. Double size.
@@ -33,15 +34,73 @@ fn main() {
             match program {
 		// Internal command implementations here.
                 ~"exit"     => {return; }
+		~"ls" 	=> {
+
+		
+if(argv.len() > 0){
+	let lookhere = std::path::PosixPath("./../"+argv[0]);
+	let contents = std::os::list_dir(&std::os::make_absolute(&lookhere));
+	for contents.iter().advance |s| {
+		print(*s+" ");
+	}
+}
+else
+{
+	let contents = std::os::list_dir(&std::os::getcwd());
+	for contents.iter().advance |s| {
+		print(*s+" ");
+	}
+}
+println("");
+}
+
 		~"history"  => {
 			for std::uint::range(0,ct) |i| {
 				println(fmt!("%s  %s",std::uint::to_str(i+1),(*hist)[i]));
 			}
 	        }
-		~"cd"	    => {println("RUST");}
+		~"cd"	    => {
+if(argv.len()!=0){
+match argv[0]{
+	~"~"	=>	//also home directory
+{
+
+let x:Option<std::path::PosixPath> = std::os::homedir();
+match x{
+Some(y)	=>	{std::os::change_dir(&y);}
+None=>{}
+}
+}
+	~".."	=>	//parent directory (via ugly workaround)
+{
+let ugly = "../";
+std::os::change_dir(&std::os::make_absolute(&std::path::PosixPath(ugly)));
+}
+	_	=>	//in case of argument
+{
+
+	let gohere = std::os::make_absolute(&std::path::PosixPath("./"+argv[0]));	
+	std::os::change_dir(&gohere);
+}
+}
+
+
+}
+else
+{
+let x:Option<std::path::PosixPath> = std::os::homedir();
+match x{
+Some(y)	=>	{std::os::change_dir(&y);}
+None=>{}
+}
+}
+
+
+
+}
                 _           => {run::process_status(program, argv);}
             }
-	    // Implement history list here.
+	   
         }
     }
 }

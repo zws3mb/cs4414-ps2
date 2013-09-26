@@ -36,14 +36,14 @@ fn main() {
 			for std::uint::range(0,argv.len()) |s| {
 				let c_str = std::str::to_owned(argv[s]);
 				match c_str {
-					~"<" => {print("***IN***"); in_loc.push(loc);}
-					~">" => {print("***OUT***"); out_loc.push(loc);}
-					~"|" => {print("***THROUGH***"); thr_loc.push(loc);}
+					~"<" => {in_loc.push(loc); }
+					~">" => {out_loc.push(loc);}
+					~"|" => {thr_loc.push(loc);}
 					_    => {}
 				} //end match for pipe comparison
 				loc += 1;
 			} // end count search
-			
+
 			let program = argv.remove(0);
 			match program {
 				// Internal command implementations here.

@@ -1,4 +1,4 @@
-use std:: {io, run};
+use std::{io, run};
 
 fn main() {
 	static CMD_PROMPT: &'static str = "gash > ";
@@ -28,6 +28,22 @@ fn main() {
 		debug!(fmt!("argv %?", argv));
 
 		if (argv.len() > 0) {
+			// Searching for pipes
+			let mut loc = 0; // index / counter / locator
+			let mut in_loc: ~[int] = ~[]; // < locations
+			let mut out_loc: ~[int] = ~[]; // > locations
+			let mut thr_loc: ~[int] = ~[]; // | locations
+			for std::uint::range(0,argv.len()) |s| {
+				let c_str = std::str::to_owned(argv[s]);
+				match c_str {
+					~"<" => {print("***IN***"); in_loc.push(loc);}
+					~">" => {print("***OUT***"); out_loc.push(loc);}
+					~"|" => {print("***THROUGH***"); thr_loc.push(loc);}
+					_    => {}
+				} //end match for pipe comparison
+				loc += 1;
+			} // end count search
+			
 			let program = argv.remove(0);
 			match program {
 				// Internal command implementations here.

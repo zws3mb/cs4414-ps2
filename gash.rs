@@ -43,7 +43,8 @@ fn main() {
 				} //end match for pipe comparison
 				loc += 1;
 			} // end count search
-
+			
+			
 			let program = argv.remove(0);
 			match program {
 				// Internal command implementations here.

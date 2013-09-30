@@ -10,7 +10,7 @@ fn execute (mut gstate:&mut shellState, line:~[~str])
 			let mut orig = program.remove(0);
 		match orig {
 				// Internal command implementations here.
-				~"exit" => {return;}
+				~"exit" => {gstate.exitstatus=true;}
 				~"ls" => {
 					if(program.len() > 0) { // non-zero check
 						let lookhere = std::path::PosixPath("./../"+program[0]); // creates pathway to look in
@@ -76,13 +76,14 @@ struct shellState {
 	output:bool,
 	piper:bool,
 	backg:bool,
-	fire:bool
+	fire:bool,
+	exitstatus:bool
 	}
 
 impl shellState {
-fn new(size:uint,ct:uint, hist: ~[~str], opstr: ~[~str], input:bool, output:bool, piper:bool,backg:bool,fire:bool)->shellState
+fn new(size:uint,ct:uint, hist: ~[~str], opstr: ~[~str], input:bool, output:bool, piper:bool,backg:bool,fire:bool,exitstatus:bool)->shellState
 {
-shellState{size:size,ct:ct,hist:hist,opstr:opstr, input:input,output:output,piper:piper,backg:backg,fire:fire}
+shellState{size:size,ct:ct,hist:hist,opstr:opstr, input:input,output:output,piper:piper,backg:backg,fire:fire,exitstatus:exitstatus}
 }
 fn get_size(&self)->uint{self.size}
 fn get_ct(&self)->uint{self.ct}
@@ -95,7 +96,7 @@ fn get_backg(&self)->bool{self.backg}
 }//end impl
 
 fn main() {
-	let mut x = shellState::new(2,0,std::vec::from_elem(0,~"test"), std::vec::from_elem(2,~"test"), false, false, false, false,false);
+	let mut x = shellState::new(2,0,std::vec::from_elem(0,~"test"), std::vec::from_elem(2,~"test"), false, false, false, false,false,false);
 	
 	loop {
 		//print(CMD_PROMPT);
@@ -124,6 +125,8 @@ fn main() {
 				} //end match for pipe comparison
 			let argarray = copy  argv;			
 			execute(y, argarray);
+			if(y.exitstatus==true){
+break;}
 			y.backg=false;
 			y.input=false;
 			y.output=false;
@@ -132,5 +135,8 @@ fn main() {
 
 
 		} // end non-zero length (cmd) check
-	} // end loop
+if(y.exitstatus==true){
+break;
+}	
+} // end loop
 } // end main

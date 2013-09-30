@@ -14,7 +14,7 @@ fn execute ( gstate:&mut shellState, line:~[~str])
 			let outpath = &std::os::make_absolute(&std::path::PosixPath(outstr));
 			println(outpath.to_str());
 	
-let writer = &std::io::file_writer(outpath, &[io::Create, io::Truncate]).unwrap();
+			let writer = &std::io::file_writer(outpath, &[io::Create, io::Truncate]).unwrap();
 		//	let outfile = std::io::rt::File::open(outstr, Create, Write);
 			let mut p = run::Process::new(orig, program, run::ProcessOptions::new());
 			let readit = p.output();
@@ -27,15 +27,24 @@ let writer = &std::io::file_writer(outpath, &[io::Create, io::Truncate]).unwrap(
 p.finish();
 		}
 		if(gstate.input) {//<
-			let inpath = program.remove(line.len()-2);
-			println("<" + gstate.opstr[gstate.opstr.len()-1]);
+			let instr = program.remove(line.len()-2);
+			let inpath = &std::os::make_absolute(&std::path::PosixPath(instr));
+			//println("<" + gstate.opstr[gstate.opstr.len()-1]);
+			let reader = &std::io::file_reader(inpath).get();
+			let mut p = run::Process::new(orig, &[], run::ProcessOptions::new());
+			let stdin = p.input();			
+			while (!reader.eof()) {
+				stdin.write_line(reader.read_line());
+			}
+			let out = p.finish_with_output();
+			print(std::str::from_bytes(out.output.tail()));
 			//pull from the last argument
 		}
 		if(gstate.piper) {//|
 			println("|" + gstate.opstr[gstate.opstr.len()-1]);
 			//also pull from last argument
 		}
-if (gstate.fire == true && orig != ~"exit") {
+		if (gstate.fire == true && orig != ~"exit") {
 			match orig {
 				// Internal command implementations here.
 				~"exit" => {gstate.exitstatus=true;}

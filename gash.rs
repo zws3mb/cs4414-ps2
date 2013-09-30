@@ -6,8 +6,9 @@ struct shellState is used to hold these flags and allow main() to access the his
 */
 fn execute (mut gstate:&mut shellState, line:~[~str])
 {
-			let mut program = copy line;	
-	match program.remove(0) {
+			let mut program = copy line;
+			let mut orig = program.remove(0);
+		match orig {
 				// Internal command implementations here.
 				~"exit" => {return;}
 				~"ls" => {
@@ -61,7 +62,7 @@ println(fmt!("%u",gstate.get_ct()));
 						}
 					} // end else
 				} // end cd
-				_ => {run::process_status(program.remove(0), program);}
+				_ => {run::process_status(orig, program);}
 			} // end command match
 
 }

@@ -11,18 +11,20 @@ fn execute ( gstate:&mut shellState, line:~[~str])
 	if(gstate.backg) {};
 		if(gstate.output) { //>
 			let outstr = program.remove(line.len()-2);
-			let outpath = &std::os::make_absolute(&std::path::PosixPath("./../"+outstr));
+			let outpath = &std::os::make_absolute(&std::path::PosixPath(outstr));
 			println(outpath.to_str());
-	let writer = &std::io::file_writer(outpath,&[io::Create]).unwrap();
+	
+let writer = &std::io::file_writer(outpath, &[io::Create, io::Truncate]).unwrap();
 		//	let outfile = std::io::rt::File::open(outstr, Create, Write);
 			let mut p = run::Process::new(orig, program, run::ProcessOptions::new());
 			let readit = p.output();
 			while (!readit.eof()) {
-				println("reader working" +readit.read_line());
+				writer.write_line(readit.read_line());
 			}
 			println(">" + gstate.opstr[gstate.opstr.len()-1]);
 		//create a filewriter to name line[1]/program[0]
 		//gstate.opstr reset!!
+p.finish();
 		}
 		if(gstate.input) {//<
 			let inpath = program.remove(line.len()-2);
@@ -88,7 +90,12 @@ if (gstate.fire == true && orig != ~"exit") {
 						}
 					} // end else
 				} // end cd
-				_ => {run::process_status(orig, program);}
+				_ => {
+if(!(gstate.piper || gstate.input || gstate.output || gstate.backg)){
+run::process_status(orig, program);
+}
+
+}
 			} // end command match
 		}//fire flag
 

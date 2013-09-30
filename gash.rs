@@ -75,13 +75,14 @@ struct shellState {
 	input:bool,
 	output:bool,
 	piper:bool,
-	backg:bool
+	backg:bool,
+	fire:bool
 	}
 
 impl shellState {
-fn new(size:uint,ct:uint, hist: ~[~str], opstr: ~[~str], input:bool, output:bool, piper:bool,backg:bool)->shellState
+fn new(size:uint,ct:uint, hist: ~[~str], opstr: ~[~str], input:bool, output:bool, piper:bool,backg:bool,fire:bool)->shellState
 {
-shellState{size:size,ct:ct,hist:hist,opstr:opstr, input:input,output:output,piper:piper,backg:backg}
+shellState{size:size,ct:ct,hist:hist,opstr:opstr, input:input,output:output,piper:piper,backg:backg,fire:fire}
 }
 fn get_size(&self)->uint{self.size}
 fn get_ct(&self)->uint{self.ct}
@@ -94,7 +95,7 @@ fn get_backg(&self)->bool{self.backg}
 }//end impl
 
 fn main() {
-	let mut x = shellState::new(2,0,std::vec::from_elem(0,~"test"), std::vec::from_elem(2,~"test"), false, false, false, false);
+	let mut x = shellState::new(2,0,std::vec::from_elem(0,~"test"), std::vec::from_elem(2,~"test"), false, false, false, false,false);
 	
 	loop {
 		//print(CMD_PROMPT);

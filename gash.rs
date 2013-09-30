@@ -8,6 +8,26 @@ fn execute (mut gstate:&mut shellState, line:~[~str])
 {
 			let mut program = copy line;
 			let mut orig = program.remove(0);
+if(gstate.backg){//&
+}
+if(gstate.output){ //>
+let outpath = program.remove(line.len()-1);
+println(">" + gstate.opstr[gstate.opstr.len()-1]);
+//create a filewriter to name line[1]/program[0]
+//gstate.opstr reset!!
+}
+if(gstate.input){//<
+let inpath = program.remove(line.len()-1);
+println("<" + gstate.opstr[gstate.opstr.len()-1]);
+//pull from the last argument
+}
+if(gstate.piper){//|
+println("|" + gstate.opstr[gstate.opstr.len()-1]);
+//also pull from last argument
+}
+
+
+if (gstate.fire == true && orig != ~"exit"){
 		match orig {
 				// Internal command implementations here.
 				~"exit" => {gstate.exitstatus=true;}
@@ -65,6 +85,10 @@ println(fmt!("%u",gstate.get_ct()));
 				_ => {run::process_status(orig, program);}
 			} // end command match
 
+}//fire flag
+else
+if(orig ==~"exit"){gstate.exitstatus=true;}
+gstate.opstr=std::vec::from_elem(0,~"test");
 }
 
 struct shellState {
@@ -96,7 +120,7 @@ fn get_backg(&self)->bool{self.backg}
 }//end impl
 
 fn main() {
-	let mut x = shellState::new(2,0,std::vec::from_elem(0,~"test"), std::vec::from_elem(2,~"test"), false, false, false, false,false,false);
+	let mut x = shellState::new(2,0,std::vec::from_elem(0,~"test"), std::vec::from_elem(0,~"test"), false, false, false, false,false,false);
 	
 	loop {
 		//print(CMD_PROMPT);
@@ -121,18 +145,31 @@ fn main() {
 					~"<" => {y.input=(true);}
 					~">" => {y.output=(true);}
  					~"|" => {y.piper=(true);}
-					_    => {}
+					_    => {y.opstr.push(c_str);}
 				} //end match for pipe comparison
-			let argarray = copy  argv;			
-			execute(y, argarray);
+			let argarray = copy  argv;		
+			let temp = copy y.opstr;
+if((y.output||y.input||y.piper)&&((s+1)<=argarray.len())){
+y.fire=true;
+y.opstr.push(argarray[s+1]);
+execute(y,copy y.opstr);
+}
+if(y.backg){
+y.fire=true;
+execute(y, copy y.opstr);
+}	
+			
 			if(y.exitstatus==true){
 break;}
 			y.backg=false;
 			y.input=false;
 			y.output=false;
-			y.piper=false;			
+			y.piper=false;
+			y.fire=false;			
 				} // end count search
-
+//let mut v = &mut x;
+y.fire=true;
+execute(y, copy y.opstr);
 
 		} // end non-zero length (cmd) check
 if(y.exitstatus==true){

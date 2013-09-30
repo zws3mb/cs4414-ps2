@@ -1,63 +1,24 @@
-use std::{io, run};
-
-fn main() {
-	static CMD_PROMPT: &'static str = "gash > ";
-	let mut ct = 0;
-	let mut size = 2;
-	let mut hist = ~std::vec::from_elem(size,~"test");
-	
-	loop {
-		//print(CMD_PROMPT);
-		print( "gash:"+std::os::getcwd().to_str()+"$ ");
-		let line = io::stdin().read_line();
-		debug!(fmt!("line: %?", line));
-		// Fringe case; history buffer is at capacity. Double size.
-		if (ct == size - 2) {
-			let temp = ~std::vec::from_elem(size,~"test");
-			let fin  = ~std::vec::concat([(*hist),(*temp)]);
-			size = size * 2;
-			hist = fin;
-		}
-
-		// Adding the line to history.
-		(*hist)[ct] = std::str::to_owned(line);
-		ct += 1;
-
-		// Read in the "command" in the shell.
-		let mut argv: ~[~str] = line.split_iter(' ').filter(|&x| x != "").transform(|x| x.to_owned()).collect();
-		debug!(fmt!("argv %?", argv));
-
-		if (argv.len() > 0) {
-			// Searching for pipes
-			let mut loc = 0; // index / counter / locator
-			let mut in_loc: ~[int] = ~[]; // < locations
-			let mut out_loc: ~[int] = ~[]; // > locations
-			let mut thr_loc: ~[int] = ~[]; // | locations
-			for std::uint::range(0,argv.len()) |s| {
-				let c_str = std::str::to_owned(argv[s]);
-				match c_str {
-					~"<" => {in_loc.push(loc); }
-					~">" => {out_loc.push(loc);}
-					~"|" => {thr_loc.push(loc);}
-					_    => {}
-				} //end match for pipe comparison
-				loc += 1;
-			} // end count search
-			
-			
-			let program = argv.remove(0);
-			match program {
+use std::{io, run, vec};
+/*
+main runs a loop--iterating through the command line, flags are thrown for various shell-specific parameters (<,>,|,&,cd,ls, history).
+To be implemented, specific shell behavior for index-dependent functions.
+struct shellState is used to hold these flags and allow main() to access the history array generated.
+*/
+fn execute (mut gstate:&mut shellState, line:~[~str])
+{
+			let mut program = copy line;	
+	match program.remove(0) {
 				// Internal command implementations here.
 				~"exit" => {return;}
 				~"ls" => {
-					if(argv.len() > 0) { // non-zero check
-						let lookhere = std::path::PosixPath("./../"+argv[0]); // makes the make_absolute part work
-						let contents = std::os::list_dir(&std::os::make_absolute(&lookhere));
-						for contents.iter().advance |s| { // s is a pointer to the strings, comprising the contents vector
+					if(program.len() > 0) { // non-zero check
+						let lookhere = std::path::PosixPath("./../"+program[0]); // creates pathway to look in
+						let contents = std::os::list_dir(&std::os::make_absolute(&lookhere)); //complete the path from parent directories, get a list of the conents of the path
+						for contents.iter().advance |s| { // print out the contents of the directory
 							print(*s+" ");
 						}
 					}
-					else {
+					else {	//without argument, view cwd
 						let contents = std::os::list_dir(&std::os::getcwd());
 						for contents.iter().advance |s| {
 							print(*s+" ");
@@ -66,13 +27,14 @@ fn main() {
 					println("");
 				} // end ls
 				~"history" => {
-					for std::uint::range(0,ct) |i| { // line blow is pretty straight forward
-						println(fmt!("%s  %s",std::uint::to_str(i+1),(*hist)[i]));
+println(fmt!("%u",gstate.get_ct()));
+					for std::uint::range(0,gstate.get_ct()) |i| { // line below is pretty straight forward
+						println(fmt!("%s  %s",std::uint::to_str(i+1),(gstate.hist)[i]));
 					}
 				} // end history
 				~"cd" => {
-					if(argv.len() != 0) {
-						match argv[0] {
+					if(program.len() != 0) {
+						match program[0] {
 							~"~" => { // home dir
 								let x:Option<std::path::PosixPath> = std::os::homedir();
 								match x {
@@ -85,7 +47,7 @@ fn main() {
 								std::os::change_dir(&std::os::make_absolute(&std::path::PosixPath(target_path)));
 							}
 							_ => { // in case of argument
-								let target_path = std::os::make_absolute(&std::path::PosixPath("./"+argv[0]));
+								let target_path = std::os::make_absolute(&std::path::PosixPath("./"+program[0]));
 								std::os::change_dir(&target_path);
 							}
 						} // end cd match
@@ -99,8 +61,73 @@ fn main() {
 						}
 					} // end else
 				} // end cd
-				_ => {run::process_status(program, argv);}
+				_ => {run::process_status(program.remove(0), program);}
 			} // end command match
+
+}
+
+struct shellState {
+	size:uint,
+	ct:uint,
+	hist:~[~str],
+	opstr:~[~str],
+	input:bool,
+	output:bool,
+	piper:bool,
+	backg:bool
+	}
+
+impl shellState {
+fn new(size:uint,ct:uint, hist: ~[~str], opstr: ~[~str], input:bool, output:bool, piper:bool,backg:bool)->shellState
+{
+shellState{size:size,ct:ct,hist:hist,opstr:opstr, input:input,output:output,piper:piper,backg:backg}
+}
+fn get_size(&self)->uint{self.size}
+fn get_ct(&self)->uint{self.ct}
+fn get_input(&self)->bool{self.input}
+fn get_output(&self)->bool{self.output}
+fn get_piper(&self)->bool{self.piper}
+fn get_backg(&self)->bool{self.backg}
+//fn get_opstr(&self)->~[~str]{return self.opstr}
+
+}//end impl
+
+fn main() {
+	let mut x = shellState::new(2,0,std::vec::from_elem(0,~"test"), std::vec::from_elem(2,~"test"), false, false, false, false);
+	
+	loop {
+		//print(CMD_PROMPT);
+		print( "gash:"+std::os::getcwd().to_str()+"$ ");
+		let inline = io::stdin().read_line();
+		debug!(fmt!("line: %?", inline));
+//		println("pushing " + inline);		
+		x.hist.push(copy inline);
+		x.ct = x.ct+1;
+
+	// Read in the "command" in the shell.
+		let mut argv: ~[~str] = inline.split_iter(' ').filter(|&q| q != "").transform(|q| q.to_owned()).collect();
+		debug!(fmt!("argv %?", argv));
+//	let argarray= &mut argv;
+	let mut y=&mut x;
+		if (argv.len() > 0) {
+
+			for std::uint::range(0,argv.len()) |s| {
+				let c_str = std::str::to_owned(argv[s]);
+				match c_str {
+					~"&" => {y.backg=(true);}
+					~"<" => {y.input=(true);}
+					~">" => {y.output=(true);}
+ 					~"|" => {y.piper=(true);}
+					_    => {}
+				} //end match for pipe comparison
+			let argarray = copy  argv;			
+			execute(y, argarray);
+			y.backg=false;
+			y.input=false;
+			y.output=false;
+			y.piper=false;			
+				} // end count search
+
 
 		} // end non-zero length (cmd) check
 	} // end loop

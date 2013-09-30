@@ -6,34 +6,32 @@ struct shellState is used to hold these flags and allow main() to access the his
 */
 fn execute ( gstate:&mut shellState, line:~[~str])
 {
-			let mut program = copy line;
-			let mut orig = program.remove(0);
-if(gstate.backg){//&}
-if(gstate.output){ //>
-let outpath = program.remove(line.len()-2);
-let writer = std::io::file_writer(std::path::PosixPath("./../"+outpath,_));
-let mut p = run::Process::new(orig, program, run::ProcessOptions::new());
-let readit = p.output();
-while (!readit.eof()){
-writer.write_lines(readit.read_lines());
-}
-println(">" + gstate.opstr[gstate.opstr.len()-1]);
-//create a filewriter to name line[1]/program[0]
-//gstate.opstr reset!!
-}
-if(gstate.input){//<
-let inpath = program.remove(line.len()-2);
-println("<" + gstate.opstr[gstate.opstr.len()-1]);
-//pull from the last argument
-}
-if(gstate.piper){//|
-println("|" + gstate.opstr[gstate.opstr.len()-1]);
-//also pull from last argument
-}
-
-
-if (gstate.fire == true && orig != ~"exit"){
-		match orig {
+	let mut program = copy line;
+	let mut orig = program.remove(0);
+	if(gstate.backg) {//&}
+		if(gstate.output) { //>
+			let outpath = program.remove(line.len()-2);
+			let writer = std::result::get(&std::io::file_writer(&std::path::PosixPath("./../"+outpath),&[]));
+			let mut p = run::Process::new(orig, program, run::ProcessOptions::new());
+			let readit = p.output();
+			while (!readit.eof()) {
+				writer.write_line(readit.read_line());
+			}
+			println(">" + gstate.opstr[gstate.opstr.len()-1]);
+		//create a filewriter to name line[1]/program[0]
+		//gstate.opstr reset!!
+		}
+		if(gstate.input) {//<
+			let inpath = program.remove(line.len()-2);
+			println("<" + gstate.opstr[gstate.opstr.len()-1]);
+			//pull from the last argument
+		}
+		if(gstate.piper) {//|
+			println("|" + gstate.opstr[gstate.opstr.len()-1]);
+			//also pull from last argument
+		}
+			if (gstate.fire == true && orig != ~"exit") {
+			match orig {
 				// Internal command implementations here.
 				~"exit" => {gstate.exitstatus=true;}
 				~"ls" => {
@@ -53,7 +51,7 @@ if (gstate.fire == true && orig != ~"exit"){
 					println("");
 				} // end ls
 				~"history" => {
-println(fmt!("%u",gstate.get_ct()));
+					println(fmt!("%u",gstate.get_ct()));
 					for std::uint::range(0,gstate.get_ct()) |i| { // line below is pretty straight forward
 						println(fmt!("%s  %s",std::uint::to_str(i+1),(gstate.hist)[i]));
 					}
@@ -89,13 +87,13 @@ println(fmt!("%u",gstate.get_ct()));
 				} // end cd
 				_ => {run::process_status(orig, program);}
 			} // end command match
+		}//fire flag
 
-}//fire flag
-
-else
-if(orig ==~"exit"){gstate.exitstatus=true;}
-gstate.opstr=std::vec::from_elem(0,~"test");
-}
+		else
+		if(orig == ~"exit") {gstate.exitstatus=true;}
+		gstate.opstr=std::vec::from_elem(0,~"test");
+	} //end backg
+}//end execute
 
 struct shellState {
 	size:uint,
@@ -108,21 +106,19 @@ struct shellState {
 	backg:bool,
 	fire:bool,
 	exitstatus:bool
-	}
+}
 
 impl shellState {
-fn new(size:uint,ct:uint, hist: ~[~str], opstr: ~[~str], input:bool, output:bool, piper:bool,backg:bool,fire:bool,exitstatus:bool)->shellState
-{
-shellState{size:size,ct:ct,hist:hist,opstr:opstr, input:input,output:output,piper:piper,backg:backg,fire:fire,exitstatus:exitstatus}
-}
-fn get_size(&self)->uint{self.size}
-fn get_ct(&self)->uint{self.ct}
-fn get_input(&self)->bool{self.input}
-fn get_output(&self)->bool{self.output}
-fn get_piper(&self)->bool{self.piper}
-fn get_backg(&self)->bool{self.backg}
-//fn get_opstr(&self)->~[~str]{return self.opstr}
-
+	fn new(size:uint,ct:uint, hist: ~[~str], opstr: ~[~str], input:bool, output:bool, piper:bool,backg:bool,fire:bool,exitstatus:bool)->shellState {
+		shellState{size:size,ct:ct,hist:hist,opstr:opstr, input:input,output:output,piper:piper,backg:backg,fire:fire,exitstatus:exitstatus}
+	}
+	fn get_size(&self)->uint{self.size}
+	fn get_ct(&self)->uint{self.ct}
+	fn get_input(&self)->bool{self.input}
+	fn get_output(&self)->bool{self.output}
+	fn get_piper(&self)->bool{self.piper}
+	fn get_backg(&self)->bool{self.backg}
+	//fn get_opstr(&self)->~[~str]{return self.opstr}
 }//end impl
 
 fn main() {
@@ -133,17 +129,16 @@ fn main() {
 		print( "gash:"+std::os::getcwd().to_str()+"$ ");
 		let inline = io::stdin().read_line();
 		debug!(fmt!("line: %?", inline));
-//		println("pushing " + inline);		
+		// println("pushing " + inline);		
 		x.hist.push(copy inline);
 		x.ct = x.ct+1;
 
-	// Read in the "command" in the shell.
+		// Read in the "command" in the shell.
 		let argv: ~[~str] = inline.split_iter(' ').filter(|&q| q != "").transform(|q| q.to_owned()).collect();
 		debug!(fmt!("argv %?", argv));
-//	let argarray= &mut argv;
-	let y=&mut x;
+		// let argarray= &mut argv;
+		let y=&mut x;
 		if (argv.len() > 0) {
-
 			for std::uint::range(0,argv.len()) |s| {
 				let c_str = std::str::to_owned(argv[s]);
 				match c_str {
@@ -153,33 +148,32 @@ fn main() {
  					~"|" => {y.piper=(true);}
 					_    => {y.opstr.push(c_str);}
 				} //end match for pipe comparison
-			let argarray = copy  argv;		
-			//let temp = copy y.opstr;
-if( (y.output||y.input) &&( (s+1)<=argarray.len() ) ){
-y.fire=true;
-y.opstr.push(argarray[s+1]);
-execute(y,copy y.opstr);
-}
-if(y.piper&& ((s+1)<=argarray.len()) ){
-let y.opstr
-}
-if(y.backg){
-y.fire=true;
-execute(y, copy y.opstr);
-}	
-			
-			if(y.exitstatus==true){break;}
-			y.backg=false;
-			y.input=false;
-			y.output=false;
-			y.fire=false;			
-				} // end count search
-//let mut v = &mut x;
-y.fire=true;
-execute(y, copy y.opstr);
-
+				let argarray = copy  argv;		
+				//let temp = copy y.opstr;
+				let length = argarray.len();
+				if( (y.output||y.input) && ((s+1) <= length) ) {
+					y.fire = true;
+					y.opstr.push(argarray[s+1]);
+					execute(y,copy y.opstr);
+				}
+				if(y.piper && ((s+1) <= length)) {
+					//let y.opstr
+				}
+				if(y.backg) {
+					y.fire = true;
+					execute(y, copy y.opstr);
+				}	
+				
+				if(y.exitstatus==true) {break;}
+				y.backg=false;
+				y.input=false;
+				y.output=false;
+				y.fire=false;			
+			} // end pipe parser
+			//let mut v = &mut x;
+			y.fire=true;
+			execute(y, copy y.opstr);
 		} // end non-zero length (cmd) check
-if(y.exitstatus==true){
-break;}	
-} // end loop
+		if(y.exitstatus==true) {break;}	
+	} // end loop
 } // end main

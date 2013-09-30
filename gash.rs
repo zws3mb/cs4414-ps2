@@ -41,8 +41,22 @@ p.finish();
 			//pull from the last argument
 		}
 		if(gstate.piper) {//|
-			println("|" + gstate.opstr[gstate.opstr.len()-1]);
-			//also pull from last argument
+			let mut p_LEFT = run::Process::new(orig, program, run::ProcessOptions::new());
+			let readit = p_LEFT.output();
+			let mut temp: ~[~str] = ~[];
+			while (!readit.eof()) {
+				temp.push(readit.read_line());
+			}
+			p_LEFT.finish();
+
+			let mut p_RGHT = run::Process::new(orig, &[], run::ProcessOptions::new());
+			let stdin = p_RGHT.input();	
+			for std::uint::range(0, temp.len()) |c| {
+				stdin.write_line(temp[c]);
+			}
+			let mut out = p_RGHT.finish_with_output();
+			out.output.pop();
+			print(std::str::from_bytes(out.output));
 		}
 		if (gstate.fire == true && orig != ~"exit") {
 			match orig {

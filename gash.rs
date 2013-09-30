@@ -4,20 +4,25 @@ main runs a loop--iterating through the command line, flags are thrown for vario
 To be implemented, specific shell behavior for index-dependent functions.
 struct shellState is used to hold these flags and allow main() to access the history array generated.
 */
-fn execute (mut gstate:&mut shellState, line:~[~str])
+fn execute ( gstate:&mut shellState, line:~[~str])
 {
 			let mut program = copy line;
 			let mut orig = program.remove(0);
-if(gstate.backg){//&
-}
+if(gstate.backg){//&}
 if(gstate.output){ //>
-let outpath = program.remove(line.len()-1);
+let outpath = program.remove(line.len()-2);
+let writer = std::io::file_writer(std::path::PosixPath("./../"+outpath,_));
+let mut p = run::Process::new(orig, program, run::ProcessOptions::new());
+let readit = p.output();
+while (!readit.eof()){
+writer.write_lines(readit.read_lines());
+}
 println(">" + gstate.opstr[gstate.opstr.len()-1]);
 //create a filewriter to name line[1]/program[0]
 //gstate.opstr reset!!
 }
 if(gstate.input){//<
-let inpath = program.remove(line.len()-1);
+let inpath = program.remove(line.len()-2);
 println("<" + gstate.opstr[gstate.opstr.len()-1]);
 //pull from the last argument
 }
@@ -86,6 +91,7 @@ println(fmt!("%u",gstate.get_ct()));
 			} // end command match
 
 }//fire flag
+
 else
 if(orig ==~"exit"){gstate.exitstatus=true;}
 gstate.opstr=std::vec::from_elem(0,~"test");
@@ -132,10 +138,10 @@ fn main() {
 		x.ct = x.ct+1;
 
 	// Read in the "command" in the shell.
-		let mut argv: ~[~str] = inline.split_iter(' ').filter(|&q| q != "").transform(|q| q.to_owned()).collect();
+		let argv: ~[~str] = inline.split_iter(' ').filter(|&q| q != "").transform(|q| q.to_owned()).collect();
 		debug!(fmt!("argv %?", argv));
 //	let argarray= &mut argv;
-	let mut y=&mut x;
+	let y=&mut x;
 		if (argv.len() > 0) {
 
 			for std::uint::range(0,argv.len()) |s| {
@@ -148,23 +154,24 @@ fn main() {
 					_    => {y.opstr.push(c_str);}
 				} //end match for pipe comparison
 			let argarray = copy  argv;		
-			let temp = copy y.opstr;
-if((y.output||y.input||y.piper)&&((s+1)<=argarray.len())){
+			//let temp = copy y.opstr;
+if( (y.output||y.input) &&( (s+1)<=argarray.len() ) ){
 y.fire=true;
 y.opstr.push(argarray[s+1]);
 execute(y,copy y.opstr);
+}
+if(y.piper&& ((s+1)<=argarray.len()) ){
+let y.opstr
 }
 if(y.backg){
 y.fire=true;
 execute(y, copy y.opstr);
 }	
 			
-			if(y.exitstatus==true){
-break;}
+			if(y.exitstatus==true){break;}
 			y.backg=false;
 			y.input=false;
 			y.output=false;
-			y.piper=false;
 			y.fire=false;			
 				} // end count search
 //let mut v = &mut x;
@@ -173,7 +180,6 @@ execute(y, copy y.opstr);
 
 		} // end non-zero length (cmd) check
 if(y.exitstatus==true){
-break;
-}	
+break;}	
 } // end loop
 } // end main

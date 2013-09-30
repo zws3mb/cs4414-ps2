@@ -140,14 +140,17 @@ fn main() {
 		let y=&mut x;
 		if (argv.len() > 0) {
 			for std::uint::range(0,argv.len()) |s| {
-				let c_str = std::str::to_owned(argv[s]);
-				match c_str {
-					~"&" => {y.backg=(true);}
-					~"<" => {y.input=(true);}
-					~">" => {y.output=(true);}
- 					~"|" => {y.piper=(true);}
-					_    => {y.opstr.push(c_str);}
-				} //end match for pipe comparison
+				print("1");
+				if(s+1 < argv.len()) {
+					let c_str = copy std::str::to_owned(argv[s+1]);	
+					match c_str {
+						~"&" => {y.backg=(true);}
+						~"<" => {y.input=(true);}
+						~">" => {y.output=(true);}
+	 					~"|" => {y.piper=(true);}
+						_    => {y.opstr.push(c_str);}
+					} //end match for pipe comparison
+				}
 				let argarray = copy  argv;		
 				//let temp = copy y.opstr;
 				let length = argarray.len();
@@ -158,9 +161,13 @@ fn main() {
 				}
 				if(y.piper && ((s+1) <= length)) {
 					//let y.opstr
+					y.fire = true;
+					y.opstr.push(argarray[s+1]);
+					execute(y,copy y.opstr);
 				}
 				if(y.backg) {
 					y.fire = true;
+					// Nothing more here? Are we just writing two distinct execute methods, or an if...?
 					execute(y, copy y.opstr);
 				}	
 				
@@ -172,7 +179,9 @@ fn main() {
 			} // end pipe parser
 			//let mut v = &mut x;
 			y.fire=true;
+			print("2");
 			execute(y, copy y.opstr);
+			print("3");
 		} // end non-zero length (cmd) check
 		if(y.exitstatus==true) {break;}	
 	} // end loop

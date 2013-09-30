@@ -1,4 +1,4 @@
-use std::{io, run, vec};
+use std::{io, run};
 /*
 main runs a loop--iterating through the command line, flags are thrown for various shell-specific parameters (<,>,|,&,cd,ls, history).
 To be implemented, specific shell behavior for index-dependent functions.
@@ -7,15 +7,18 @@ struct shellState is used to hold these flags and allow main() to access the his
 fn execute ( gstate:&mut shellState, line:~[~str])
 {
 	let mut program = copy line;
-	let mut orig = program.remove(0);
-	if(gstate.backg) {//&}
+	let orig = program.remove(0);
+	if(gstate.backg) {};
 		if(gstate.output) { //>
-			let outpath = program.remove(line.len()-2);
-			let writer = std::result::get(&std::io::file_writer(&std::path::PosixPath("./../"+outpath),&[]));
+			let outstr = program.remove(line.len()-2);
+			let outpath = &std::os::make_absolute(&std::path::PosixPath("./../"+outstr));
+			println(outpath.to_str());
+	let writer = &std::io::file_writer(outpath,&[io::Create]).unwrap();
+		//	let outfile = std::io::rt::File::open(outstr, Create, Write);
 			let mut p = run::Process::new(orig, program, run::ProcessOptions::new());
 			let readit = p.output();
 			while (!readit.eof()) {
-				writer.write_line(readit.read_line());
+				println("reader working" +readit.read_line());
 			}
 			println(">" + gstate.opstr[gstate.opstr.len()-1]);
 		//create a filewriter to name line[1]/program[0]
@@ -30,7 +33,7 @@ fn execute ( gstate:&mut shellState, line:~[~str])
 			println("|" + gstate.opstr[gstate.opstr.len()-1]);
 			//also pull from last argument
 		}
-			if (gstate.fire == true && orig != ~"exit") {
+if (gstate.fire == true && orig != ~"exit") {
 			match orig {
 				// Internal command implementations here.
 				~"exit" => {gstate.exitstatus=true;}
@@ -92,7 +95,7 @@ fn execute ( gstate:&mut shellState, line:~[~str])
 		else
 		if(orig == ~"exit") {gstate.exitstatus=true;}
 		gstate.opstr=std::vec::from_elem(0,~"test");
-	} //end backg
+	//} //end backg
 }//end execute
 
 struct shellState {
@@ -140,9 +143,8 @@ fn main() {
 		let y=&mut x;
 		if (argv.len() > 0) {
 			for std::uint::range(0,argv.len()) |s| {
-				print("1");
-				if(s+1 < argv.len()) {
-					let c_str = copy std::str::to_owned(argv[s+1]);	
+				if(s < argv.len()) {
+					let c_str = copy std::str::to_owned(argv[s]);	
 					match c_str {
 						~"&" => {y.backg=(true);}
 						~"<" => {y.input=(true);}
@@ -151,15 +153,15 @@ fn main() {
 						_    => {y.opstr.push(c_str);}
 					} //end match for pipe comparison
 				}
-				let argarray = copy  argv;		
+				let argarray = copy argv;		
 				//let temp = copy y.opstr;
-				let length = argarray.len();
-				if( (y.output||y.input) && ((s+1) <= length) ) {
+//				let length = argarray.len();
+				if( (y.output||y.input) && ((s+1) <= argarray.len()) ) {
 					y.fire = true;
-					y.opstr.push(argarray[s+1]);
+					y.opstr.push(copy argarray[s+1]);
 					execute(y,copy y.opstr);
 				}
-				if(y.piper && ((s+1) <= length)) {
+				if(y.piper && ((s+1) <= argarray.len())) {
 					//let y.opstr
 					y.fire = true;
 					y.opstr.push(argarray[s+1]);
@@ -179,10 +181,8 @@ fn main() {
 			} // end pipe parser
 			//let mut v = &mut x;
 			y.fire=true;
-			print("2");
-			execute(y, copy y.opstr);
-			print("3");
-		} // end non-zero length (cmd) check
+					execute(y, copy y.opstr);
+			} // end non-zero length (cmd) check
 		if(y.exitstatus==true) {break;}	
 	} // end loop
 } // end main

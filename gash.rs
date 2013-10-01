@@ -8,12 +8,18 @@ fn execute ( gstate:&mut shellState, line:~[~str])
 {
 	let mut program = copy line;
 	let orig = program.remove(0);
-	if(gstate.backg) {
+if(gstate.backg) {
+
 	let mut bargs = copy line;
 	let bcom = bargs.remove(0);
 	let cobargs = bargs;
+println("inside bg");
 do std::task::spawn_unlinked {
+println("background spawn");
 run::process_status(copy bcom, copy cobargs);
+//let result =run::process_output(copy bcom, copy cobargs);
+//	print("hi"+std::str::from_bytes(result.output.tail()));
+
 }
 
 }
@@ -195,18 +201,18 @@ fn main() {
 				//let temp = copy y.opstr;
 //				let length = argarray.len();
 				if( (y.output||y.input) && ((s+1) <= argarray.len()) ) {
-					y.fire = true;
+					//y.fire = true;
 					y.opstr.push(copy argarray[s+1]);
 					execute(y,copy y.opstr);
 				}
 				if(y.piper && ((s+1) <= argarray.len())) {
 					//let y.opstr
-					y.fire = true;
+					//y.fire = true;
 					y.opstr.push(argarray[s+1]);
 					execute(y,copy y.opstr);
 				}
 				if(y.backg) {
-					y.fire = true;
+					//y.fire = true;
 					// Nothing more here? Are we just writing two distinct execute methods, or an if...?
 					execute(y, copy y.opstr);
 				}	
@@ -215,6 +221,7 @@ fn main() {
 				y.backg=false;
 				y.input=false;
 				y.output=false;
+				y.piper = false;
 				y.fire=false;			
 			} // end pipe parser
 			//let mut v = &mut x;

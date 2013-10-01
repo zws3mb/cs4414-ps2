@@ -8,7 +8,15 @@ fn execute ( gstate:&mut shellState, line:~[~str])
 {
 	let mut program = copy line;
 	let orig = program.remove(0);
-	if(gstate.backg) {};
+	if(gstate.backg) {
+	let mut bargs = copy line;
+	let bcom = bargs.remove(0);
+	let cobargs = bargs;
+do std::task::spawn_unlinked {
+run::process_status(copy bcom, copy cobargs);
+}
+
+}
 		if(gstate.output) { //>
 			let outstr = program.remove(line.len()-2);
 			let outpath = &std::os::make_absolute(&std::path::PosixPath(outstr));

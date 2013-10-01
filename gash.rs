@@ -6,12 +6,13 @@ struct shellState is used to hold these flags and allow main() to access the his
 */
 fn execute ( gstate:&mut shellState, line:~[~str])
 {
+	println("How many times");
 	let mut program = copy line;
 	let orig = program.remove(0);
 if(gstate.backg) {
 
 	let mut bargs = copy line;
-	let bcom = bargs.remove(0);
+	let bcom = copy orig;
 	let cobargs = bargs;
 println("inside bg");
 do std::task::spawn_unlinked {
@@ -35,7 +36,7 @@ run::process_status(copy bcom, copy cobargs);
 			while (!readit.eof()) {
 				writer.write_line(readit.read_line());
 			}
-			println(">" + gstate.opstr[gstate.opstr.len()-1]);
+			//println(">" + gstate.opstr[gstate.opstr.len()-1]);
 		//create a filewriter to name line[1]/program[0]
 		//gstate.opstr reset!!
 p.finish();
@@ -179,7 +180,7 @@ fn main() {
 		// println("pushing " + inline);		
 		x.hist.push(copy inline);
 		x.ct = x.ct+1;
-
+		x.fire=false;
 		// Read in the "command" in the shell.
 		let argv: ~[~str] = inline.split_iter(' ').filter(|&q| q != "").transform(|q| q.to_owned()).collect();
 		debug!(fmt!("argv %?", argv));
@@ -230,4 +231,5 @@ fn main() {
 			} // end non-zero length (cmd) check
 		if(y.exitstatus==true) {break;}	
 	} // end loop
+	
 } // end main
